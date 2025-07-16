@@ -1,16 +1,20 @@
-FROM osrm/osrm-backend:v5.27.1
+FROM osrm/osrm-backend
 
-# 1. Install dependencies (using newer image version avoids repository issues)
+# 1. Use archived Debian repositories
+RUN echo "deb http://archive.debian.org/debian stretch main" > /etc/apt/sources.list && \
+    echo "deb http://archive.debian.org/debian-security stretch/updates main" >> /etc/apt/sources.list
+
+# 2. Install wget from working repos
 RUN apt-get update && apt-get install -y wget
 
-# 2. Download Chennai metro extract (smaller file for free tier)
-RUN wget https://download.geofabrik.de/asia/india/south-latest.osm.pbf -O chennai.osm.pbf
+# 3. Download Tamil Nadu map from OSM.fr (working source)
+RUN wget https://download.openstreetmap.fr/extracts/asia/india/tamil_nadu-latest.osm.pbf -O tamil_nadu.osm.pbf
 
-# 3. Process map with optimizations for free tier constraints
-RUN osrm-extract -p /opt/car.lua chennai.osm.pbf && \
-    osrm-partition chennai.osm.pbf && \
-    osrm-customize chennai.osm.pbf
+# 4. Process map with optimizations for free tier constraints
+RUN osrm-extract -p /opt/car.lua tamil_nadu.osm.pbf && \
+    osrm-partition tamil_nadu.osm.pbf && \
+    osrm-customize tamil_nadu.osm.pbf
 
-# 4. Start server with aggressive memory optimizations
+# 5. Start server with memory optimizations
 EXPOSE 5000
-CMD ["osrm-routed", "--algorithm", "mld", "chennai.osm.pbf", "--max-matching-size", "2048", "--max-table-size", "2048"]
+CMD ["osrm-routed", "--algorithm", "mld", "tamil_nadu.osm.pbf", "--max-matching-size", "4096", "--max-table-size", "4096"]
