@@ -10,10 +10,11 @@ RUN apt-get update && apt-get install -y wget
 # 3. Download Chennai map (smaller file for free tier)
 RUN wget https://download.openstreetmap.fr/extracts/asia/india/tamil_nadu/chennai.osm.pbf
 
-# 4. Process map with optimizations
-RUN osrm-extract -p /opt/car.lua chennai.osm.pbf --small-component-size 1
-RUN osrm-partition chennai.osm.pbf
-RUN osrm-customize chennai.osm.pbf
+# 4. Process map with optimizations for free tier constraints
+RUN osrm-extract -p /opt/car.lua chennai.osm.pbf && \
+    osrm-partition chennai.osm.pbf && \
+    osrm-customize chennai.osm.pbf
 
-# 5. Start server
-CMD ["osrm-routed", "--algorithm", "mld", "chennai.osm.pbf"]
+# 5. Start server with memory optimizations
+EXPOSE 5000
+CMD ["osrm-routed", "--algorithm", "mld", "chennai.osm.pbf", "--max-matching-size", "8192", "--max-table-size", "8192"]
